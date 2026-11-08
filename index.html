@@ -1,0 +1,699 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<title>Solubility Quest</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: one centred tabletop column. Controls, team score pills, a six-wide snake board, dice, legend, rules. A bottom sheet carries each question card. */
+:root {
+  --bg: #F3F4FA;
+  --surface: #FFFFFF;
+  --line: #D9DCEB;
+  --fg: #1B2238;
+  --muted: #566080;
+  --primary: #324A75;
+  --on-primary: #FFFFFF;
+  --primary-soft: #E1E8F8;
+
+  --rules-bg: #DCE8FA; --rules-line: #A9C4EC; --rules-ink: #2F5C9E;
+  --scenario-bg: #E4DFF5; --scenario-line: #B7A9E6; --scenario-ink: #4B3D96;
+  --fact-bg: #F5DDE3; --fact-line: #E3A5B6; --fact-ink: #9A2F52;
+  --challenge-bg: #FAF0C9; --challenge-line: #E2C75E; --challenge-ink: #7A5F00;
+
+  --good: #1E7A4C; --good-bg: #DDF2E6;
+  --bad: #B3392D; --bad-bg: #FBE4E1;
+  --scrim: rgba(15, 20, 35, 0.55);
+  --ladder-bg: #DDF2E6; --ladder-line: #86C9A3; --ladder-ink: #1E7A4C;
+  --snake-bg: #FBE4E1; --snake-line: #E6A39A; --snake-ink: #B3392D;
+
+  --t-red: #CF4A3C; --t-yellow: #DDB52E; --t-green: #3A9A66; --t-blue: #2F6BCB; --t-grey: #4A5266;
+
+  --font-display: 'Fredoka', 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151F; --surface: #1B2030; --line: #343B55; --fg: #E8EBF6; --muted: #A2ABC8;
+    --primary: #7C9AD6; --on-primary: #0F1626; --primary-soft: #26304F;
+    --rules-bg: #1F2F4D; --rules-line: #3F5E94; --rules-ink: #9DBCF0;
+    --scenario-bg: #2B2750; --scenario-line: #5B4FA3; --scenario-ink: #BDB2F2;
+    --fact-bg: #46242F; --fact-line: #94485F; --fact-ink: #F0A9BE;
+    --challenge-bg: #4A3F17; --challenge-line: #A68A25; --challenge-ink: #F0D26B;
+    --good: #6FD3A0; --good-bg: #17382A;
+    --bad: #F29286; --bad-bg: #451F1B;
+    --scrim: rgba(0, 0, 0, 0.65);
+    --ladder-bg: #17382A; --ladder-line: #2F7A55; --ladder-ink: #6FD3A0; --snake-bg: #451F1B; --snake-line: #94483F; --snake-ink: #F29286;
+    --t-red: #E8685A; --t-yellow: #E7C14A; --t-green: #55BB85; --t-blue: #5B93EA; --t-grey: #A3ABBE;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151F; --surface: #1B2030; --line: #343B55; --fg: #E8EBF6; --muted: #A2ABC8;
+  --primary: #7C9AD6; --on-primary: #0F1626; --primary-soft: #26304F;
+  --rules-bg: #1F2F4D; --rules-line: #3F5E94; --rules-ink: #9DBCF0;
+  --scenario-bg: #2B2750; --scenario-line: #5B4FA3; --scenario-ink: #BDB2F2;
+  --fact-bg: #46242F; --fact-line: #94485F; --fact-ink: #F0A9BE;
+  --challenge-bg: #4A3F17; --challenge-line: #A68A25; --challenge-ink: #F0D26B;
+  --good: #6FD3A0; --good-bg: #17382A;
+  --bad: #F29286; --bad-bg: #451F1B;
+  --scrim: rgba(0, 0, 0, 0.65);
+    --ladder-bg: #17382A; --ladder-line: #2F7A55; --ladder-ink: #6FD3A0; --snake-bg: #451F1B; --snake-line: #94483F; --snake-ink: #F29286;
+  --t-red: #E8685A; --t-yellow: #E7C14A; --t-green: #55BB85; --t-blue: #5B93EA; --t-grey: #A3ABBE;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+button { font-family: inherit; color: inherit; }
+button:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+.wrap { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+
+.hero { display: flex; align-items: center; gap: 14px; }
+.logo {
+  flex: none; width: 58px; height: 58px; border-radius: 16px;
+  background: var(--rules-bg); border: 2px solid var(--rules-line); color: var(--rules-ink);
+  display: grid; place-items: center;
+}
+.logo svg { width: 32px; height: 32px; }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1.1; text-wrap: balance; }
+.tag { margin: 2px 0 0; color: var(--muted); font-size: 18px; }
+
+.card { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; padding: 18px; }
+.controls { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: flex-end; }
+.group { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.label { font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.seg { display: inline-flex; border: 2px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
+.seg button {
+  min-width: 46px; min-height: 46px; padding: 0 18px; border: 0; background: var(--surface);
+  font-size: 18px; font-weight: 700; cursor: pointer;
+}
+.seg button + button { border-left: 2px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
+.ghost {
+  min-height: 46px; padding: 0 24px; border: 2px solid var(--line); border-radius: 14px; background: var(--surface);
+  font-family: var(--font-display); font-weight: 600; font-size: 20px; cursor: pointer;
+}
+
+.scores { display: flex; flex-wrap: wrap; gap: 10px; }
+.pill {
+  display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px;
+  border: 2px solid var(--line); border-radius: 999px; background: var(--surface);
+  font-family: var(--font-display); font-weight: 500; font-size: 20px;
+}
+.pill b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.pill .pts { font-family: var(--font-body); font-size: 15px; color: var(--muted); }
+.pill.active { background: var(--primary-soft); border-color: var(--primary); }
+.pill .dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 2px var(--line); }
+
+.turn { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 25px; line-height: 1.25; text-wrap: balance; }
+
+.boardcard { background: var(--surface); border: 2px solid var(--line); border-radius: 24px; padding: 14px; }
+.board { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.cell {
+  position: relative; aspect-ratio: 1; border: 2px solid; border-radius: 12px;
+  display: grid; place-items: center; padding-bottom: 10px; min-width: 0;
+}
+.cell .num { position: absolute; top: 3px; left: 6px; font-size: 11px; font-weight: 700; opacity: 0.75; font-variant-numeric: tabular-nums; }
+.cell .ico svg { display: block; width: 22px; height: 22px; }
+.cell .q { font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1; }
+.cell .lab { font-family: var(--font-display); font-weight: 600; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.tokens { position: absolute; left: 3px; right: 3px; bottom: 4px; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; }
+.tk { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(20, 24, 40, 0.4); }
+.tk.active { transform: scale(1.3); }
+.t-rules { background: var(--rules-bg); border-color: var(--rules-line); color: var(--rules-ink); }
+.t-scenario { background: var(--scenario-bg); border-color: var(--scenario-line); color: var(--scenario-ink); }
+.t-fact { background: var(--fact-bg); border-color: var(--fact-line); color: var(--fact-ink); }
+.t-challenge { background: var(--challenge-bg); border-color: var(--challenge-line); color: var(--challenge-ink); }
+.t-start, .t-finish { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.t-start .num, .t-finish .num { opacity: 0.85; }
+
+.rollrow { display: flex; gap: 14px; align-items: center; }
+.die {
+  flex: none; width: 66px; height: 66px; padding: 9px; border: 3px solid var(--fg); border-radius: 16px; background: var(--surface);
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); place-items: center;
+}
+.pip { width: 11px; height: 11px; border-radius: 50%; background: transparent; }
+.pip.on { background: var(--fg); }
+.primary {
+  flex: 1; min-height: 64px; border: 0; border-radius: 18px; background: var(--primary); color: var(--on-primary);
+  font-family: var(--font-display); font-weight: 600; font-size: 24px; cursor: pointer;
+}
+.primary:disabled { opacity: 0.45; cursor: not-allowed; }
+.primary.small { min-height: 52px; font-size: 20px; width: 100%; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--muted); font-size: 16px; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 20px; height: 20px; border-radius: 6px; border: 2px solid; }
+
+.how h2 { margin: 0 0 10px; font-family: var(--font-display); font-weight: 600; font-size: 26px; }
+.how ol { margin: 0; padding-left: 24px; max-width: 65ch; }
+.how li { margin-bottom: 8px; padding-left: 4px; }
+
+.sheet { position: fixed; inset: 0; z-index: 50; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; }
+.panel {
+  width: 100%; max-width: 580px; max-height: calc(100% - env(safe-area-inset-top, 0px) - 16px); overflow-y: auto;
+  background: var(--surface); border-radius: 26px 26px 0 0;
+  padding-top: 22px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px));
+  padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 640px) {
+  .sheet { align-items: center; }
+  .panel { border-radius: 26px; padding-bottom: 24px; }
+  .board { gap: 10px; }
+  .cell .ico svg { width: 28px; height: 28px; }
+  .tk { width: 14px; height: 14px; }
+}
+.sheet-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-bottom: 14px; }
+.chip { display: inline-flex; padding: 5px 13px; border: 2px solid; border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.who { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-weight: 700; }
+.who .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 2px var(--line); }
+.qtext { margin: 0 0 16px; font-family: var(--font-display); font-weight: 600; font-size: 25px; line-height: 1.25; text-wrap: balance; outline: none; }
+.opts { display: flex; flex-direction: column; gap: 10px; }
+.opt {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; min-height: 56px;
+  border: 2px solid var(--line); border-radius: 16px; background: var(--surface);
+  font-size: 18px; font-weight: 700; text-align: left; cursor: pointer;
+}
+.opt:disabled { color: var(--fg); cursor: default; }
+.opt .letter {
+  flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--primary-soft); font-size: 15px; font-weight: 800;
+}
+.opt .otext { min-width: 0; overflow-wrap: anywhere; }
+.opt.sel { border-color: var(--primary); background: var(--primary-soft); }
+.opt.ok { border-color: var(--good); background: var(--good-bg); }
+.opt.ok .letter { background: var(--good); color: var(--surface); }
+.opt.no { border-color: var(--bad); background: var(--bad-bg); }
+.opt.no .letter { background: var(--bad); color: var(--surface); }
+.fb { margin-top: 14px; padding: 14px 16px; border-radius: 16px; }
+.fb.good { background: var(--good-bg); color: var(--fg); border: 2px solid var(--good); }
+.fb.bad { background: var(--bad-bg); color: var(--fg); border: 2px solid var(--bad); }
+.fb strong { display: block; font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+.fb p { margin: 4px 0 0; }
+.actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+.rank { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.rank li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 2px solid var(--line); border-radius: 14px; font-weight: 700; font-size: 18px; }
+.rank li.win { border-color: var(--primary); background: var(--primary-soft); }
+.rank .dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 2px var(--line); }
+.rank .sc { margin-left: auto; font-variant-numeric: tabular-nums; }
+.secondary { flex: 1; min-height: 52px; border: 2px solid var(--line); border-radius: 18px; background: var(--surface); font-family: var(--font-display); font-weight: 600; font-size: 20px; cursor: pointer; }
+
+.t-ladder { background: var(--ladder-bg); border-color: var(--ladder-line); color: var(--ladder-ink); }
+.t-snake { background: var(--snake-bg); border-color: var(--snake-line); color: var(--snake-ink); }
+.cell.t-rules .tokens, .cell.t-scenario .tokens, .cell.t-fact .tokens, .cell.t-challenge .tokens { top: 50%; bottom: auto; transform: translateY(-50%); }
+.jump { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.jump svg { display: block; width: 22px; height: 22px; }
+.jl { font-size: 11px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.toast {
+  position: fixed; z-index: 60; top: calc(env(safe-area-inset-top, 0px) + 12px); left: 50%; transform: translateX(-50%);
+  width: max-content; max-width: calc(100% - 32px); padding: 12px 18px; border: 2px solid; border-radius: 16px;
+  font-weight: 800; font-size: 17px; line-height: 1.3; text-align: center; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+@media (min-width: 640px) {
+  .jump svg { width: 26px; height: 26px; }
+  .jl { font-size: 13px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tk { transition: transform 0.15s ease; }
+  .panel { animation: rise 0.25s ease-out; }
+  @keyframes rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+}
+</style>
+
+<main class="wrap">
+  <header class="hero">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4A1.5 1.5 0 0 0 19.5 19L14 9V3"/><path d="M7.5 15h9"/></svg>
+    </div>
+    <div>
+      <h1>Solubility Quest</h1>
+      <p class="tag">Apply the rules, find the solution!</p>
+    </div>
+  </header>
+
+  <section class="card controls" aria-label="Game settings">
+    <div class="group"><span class="label" id="lblTeams">Teams</span><div class="seg" id="segTeams" role="group" aria-labelledby="lblTeams"></div></div>
+    <div class="group"><span class="label" id="lblBoard">Board</span><div class="seg" id="segBoard" role="group" aria-labelledby="lblBoard"></div></div>
+    <button type="button" class="ghost" id="newGame">New game</button>
+  </section>
+
+  <div class="scores" id="scores"></div>
+  <p class="turn" id="turnText" aria-live="polite"></p>
+
+  <section class="boardcard" aria-label="Game board"><div class="board" id="board"></div></section>
+
+  <div class="rollrow">
+    <div class="die" id="die" role="img" aria-label="Dice shows 6"></div>
+    <button type="button" class="primary" id="rollBtn">Roll the dice</button>
+  </div>
+
+  <div class="legend">
+    <span><i class="sw t-rules"></i>Solubility Rules</span>
+    <span><i class="sw t-scenario"></i>Scenario</span>
+    <span><i class="sw t-fact"></i>Quick Fact</span>
+    <span><i class="sw t-challenge"></i>Challenge (2 points)</span>
+    <span><i class="sw t-ladder"></i>Ladder (climb up)</span>
+    <span><i class="sw t-snake"></i>Snake (slide down)</span>
+  </div>
+
+  <section class="card how">
+    <h2>How to play</h2>
+    <ol>
+      <li>Choose the number of teams. Each team puts a coloured token on START.</li>
+      <li>Roll the dice and move forward.</li>
+      <li>Read the card that matches the space you land on.</li>
+      <li>Answer the question. If correct, you score a point and stay. If wrong, go back one space.</li>
+      <li>Challenge cards are worth 2 points.</li>
+      <li>A ladder square carries you up to a higher square. A snake square slides you down to a lower one. There is no card on those squares.</li>
+      <li>The game ends when a team reaches FINISH. The team with the most points wins. A tie goes to the team that reached FINISH.</li>
+    </ol>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Question card"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  const sleep = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
+  const shuffle = (a) => {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  };
+
+  const TEAMS = [
+    { name: 'Red', color: 'var(--t-red)' },
+    { name: 'Yellow', color: 'var(--t-yellow)' },
+    { name: 'Green', color: 'var(--t-green)' },
+    { name: 'Blue', color: 'var(--t-blue)' },
+    { name: 'Grey', color: 'var(--t-grey)' }
+  ];
+
+  const TYPE_NAMES = { rules: 'Solubility Rules', scenario: 'Scenario', fact: 'Quick Fact', challenge: 'Challenge' };
+  const SVG_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  const ICONS = {
+    scenario: SVG_OPEN + '<path d="M9 3h6"/><path d="M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4A1.5 1.5 0 0 0 19.5 19L14 9V3"/><path d="M7.5 15h9"/></svg>',
+    fact: SVG_OPEN + '<path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>',
+    challenge: SVG_OPEN + '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8L3.5 9.7l5.9-.9z"/></svg>',
+    ladder: SVG_OPEN + '<path d="M8 3v18"/><path d="M16 3v18"/><path d="M8 7.5h8"/><path d="M8 12h8"/><path d="M8 16.5h8"/></svg>',
+    snake: SVG_OPEN + '<path d="M4.5 21C9 22 19 19.5 17.5 15C16 10.5 6.5 13.5 8 8.5" stroke-width="3.4"/><ellipse cx="8" cy="7" rx="3.1" ry="2.7" fill="currentColor" stroke="none"/><circle cx="6.8" cy="6.4" r="0.8" style="fill:var(--snake-bg)" stroke="none"/><circle cx="9.2" cy="6.4" r="0.8" style="fill:var(--snake-bg)" stroke="none"/><path d="M8 4.4V2.7M8 2.9L6.6 1.4M8 2.9L9.4 1.4" stroke-width="1.3"/></svg>'
+  };
+
+  const CYCLE = ['rules', 'scenario', 'fact', 'rules', 'scenario', 'challenge'];
+  const FULL = ['start'].concat(Array.from({ length: 28 }, (_, i) => CYCLE[i % 6]), ['finish']);
+  const BOARDS = { full: FULL, short: FULL.slice(0, 11).concat('finish') };
+  /* Ladders go up, snakes go down. Landing on one moves the team and ends the turn (no card). */
+  const JUMPS = {
+    full: { 5: 12, 10: 22, 15: 4, 26: 14 },
+    short: { 2: 7, 5: 9, 8: 3, 10: 4 }
+  };
+
+  /* Question bank: 25 questions from CHEM-232 Chapter 04, section 4.2 (Solubility and the Factors Affecting It, slides 18-25 plus glossary).
+     o = options, a = index of the correct option. */
+  const BANK = {
+    rules: [
+      { q: 'According to the lecture, how does temperature affect the solubility of most solids in water?', o: ['It increases as temperature rises (directly proportional)', 'It decreases as temperature rises', 'Temperature has no effect', 'Solids become insoluble when heated'], a: 0, e: 'Slide 22: the solubility of most solids in H₂O is directly proportional to temperature.' },
+      { q: 'How does temperature affect the solubility of gases in water?', o: ['Inversely proportional: warmer water holds less gas', 'Directly proportional: warmer water holds more gas', 'It has no effect on gases', 'Gases dissolve only above 100 °C'], a: 0, e: 'Slide 22: gas molecules move faster at high temperature and escape from the water.' },
+      { q: 'Why is the solubility of solids in water not affected by pressure?', o: ['Solids cannot be compressed', 'Solids are always heavier than water', 'Solids dissolve completely at any pressure', 'Pressure only changes the colour of a solution'], a: 0, e: 'Slide 22: pressure does not change the solubility of solids because solids cannot be compressed.' },
+      { q: 'What does Henry’s law say about a gas dissolved in water?', o: ['Its solubility is directly proportional to the pressure of the gas', 'Its solubility is inversely proportional to the pressure of the gas', 'Its solubility does not depend on pressure', 'Its solubility depends only on the volume of water'], a: 0, e: 'Slide 22: C = kP, so more pressure means more dissolved gas.' },
+      { q: 'Which equation is Henry’s law?', o: ['C = kP', 'C₁V₁ = C₂V₂', 'C = k/P', 'C = P + k'], a: 0, e: 'C is the solubility of the gas, P is its pressure and k is Henry’s constant. C₁V₁ = C₂V₂ is the dilution equation.' },
+      { q: 'On the lecture’s effect-of-pressure graph, which line stays flat as pressure increases?', o: ['Solids', 'Gases', 'Both lines', 'Neither line'], a: 0, e: 'Slide 22: gas solubility rises with pressure, while solids stay flat.' },
+      { q: 'Which change would increase the solubility of a gas in water?', o: ['Increasing the pressure of the gas', 'Increasing the temperature', 'Decreasing the pressure of the gas', 'Heating the water and lowering the pressure'], a: 0, e: 'Higher pressure raises gas solubility (Henry’s law). Higher temperature lowers it.' }
+    ],
+    scenario: [
+      { q: 'Solutions such as 0.9% saline and dextrose are used for patient hydration and drug delivery. What type of solution are they?', o: ['Unsaturated', 'Saturated', 'Supersaturated', 'Colloidal'], a: 0, e: 'Slide 19: IV fluids are unsaturated, so they can still dissolve more solute.' },
+      { q: 'Bile stored in the gallbladder is normally saturated with which substance?', o: ['Cholesterol', 'Glucose', 'Sodium chloride', 'Heparin'], a: 0, e: 'Slide 19: normal bile is typically saturated with cholesterol.' },
+      { q: 'A patient’s urine becomes supersaturated with mineral salts. What can happen?', o: ['Crystals form and cause kidney stones', 'The salts dissolve completely', 'The urine becomes unsaturated', 'Nothing, the solution is stable'], a: 0, e: 'Slide 19: supersaturation of urine with mineral salts, or of blood with uric acid, leads to crystals, causing kidney stones or gout.' },
+      { q: 'The liquid part of an antibiotic suspension is clear. A small spoonful of sugar added to it dissolves completely. Which term fits the liquid with respect to sugar?', o: ['Unsaturated solution', 'Saturated solution', 'Supersaturated solution', 'Colloidal suspension'], a: 0, e: 'Slide 19 defines an unsaturated solution as one where additional solute can still dissolve. The extra sugar dissolved, so the liquid was not full.' },
+      { q: 'A bottle of carbonated water is left in a warm place. What happens to the solubility of the dissolved CO₂?', o: ['It decreases, so CO₂ escapes', 'It increases', 'It stays the same', 'CO₂ turns into a solid'], a: 0, e: 'Slide 22: gas solubility is inversely proportional to temperature.' },
+      { q: 'Why does a carbonated drink bottled under high CO₂ pressure hold more dissolved gas than an open glass?', o: ['Higher gas pressure increases gas solubility', 'Higher pressure makes the water colder', 'Pressure turns CO₂ into a solid', 'Pressure removes water from the drink'], a: 0, e: 'Henry’s law (slide 22): C = kP.' }
+    ],
+    fact: [
+      { q: 'Solubility is the maximum amount of solute that can dissolve in how much solvent at a specific temperature?', o: ['100 grams of solvent', '10 grams of solvent', '1 kilogram of solvent', '1 mole of solvent'], a: 0, e: 'Slide 18: solubility is the maximum amount of solute that dissolves in 100 g of solvent at a specific temperature to form a stable solution.' },
+      { q: 'What is the first step in the mechanism of dissolution?', o: ['Dissociation of the solute', 'Solvation of the solute', 'Crystallization', 'Dilution'], a: 0, e: 'Slide 18: solvent particle motion breaks the forces holding the solute together, giving individual ions or molecules.' },
+      { q: 'Solvent molecules surround and stabilize the free solute particles. What is this step called?', o: ['Solvation', 'Dissociation', 'Dilution', 'Saturation'], a: 0, e: 'Slide 18: solvation is the second step of dissolution.' },
+      { q: 'Solvation has a special name when water is the solvent. What is it?', o: ['Hydration', 'Dehydration', 'Dilution', 'Evaporation'], a: 0, e: 'Slide 18: it is called hydration if water is the solvent.' },
+      { q: 'Which type of solution contains the maximum amount of dissolved solute at equilibrium?', o: ['Saturated', 'Unsaturated', 'Supersaturated', 'Diluted'], a: 0, e: 'Slide 19: any additional solute added to a saturated solution stays undissolved.' },
+      { q: 'Which type of solution is unstable and tends to form crystals when disturbed?', o: ['Supersaturated', 'Saturated', 'Unsaturated', 'Standard'], a: 0, e: 'Slide 19: supersaturated solutions hold more dissolved solute than is normally possible at equilibrium.' },
+      { q: 'What is crystallization?', o: ['Dissolved solute coming out of a liquid to form solid crystals', 'A solid dissolving in water', 'Adding solvent to lower the concentration', 'A gas escaping from a liquid'], a: 0, e: 'Slide 31 (glossary): this is what happens when an unstable supersaturated solution is disturbed.' }
+    ],
+    challenge: [
+      { q: 'If the solubility of SO₂ gas in water is 1.3 × 10⁻³ mol/L at 1 atm, what is its solubility at 2 atm?', o: ['2.6 × 10⁻³ mol/L', '1.3 × 10⁻³ mol/L', '6.5 × 10⁻⁴ mol/L', '3.9 × 10⁻³ mol/L'], a: 0, e: 'Slide 24: k = 1.3 × 10⁻³ mol/(L·atm), so C = kP = 1.3 × 10⁻³ × 2 = 2.6 × 10⁻³ mol/L.' },
+      { q: 'The Henry’s law constant for CO₂ in water at 25 °C is 3.4 × 10⁻² mol/L·atm. What is the solubility of CO₂ at a partial pressure of 4.0 atm?', o: ['0.136 mol/L', '0.0085 mol/L', '1.36 mol/L', '0.034 mol/L'], a: 0, e: 'Slide 24: C = kP = (3.4 × 10⁻²)(4.0) = 0.136 mol/L.' },
+      { q: 'At which pressure is the solubility of H₂ (k = 8 × 10⁻⁴ mol/L·atm) equal to the solubility of O₂ (k = 0.001 mol/L·atm) at 1 atm?', o: ['1.25 atm', '0.8 atm', '1.0 atm', '2.0 atm'], a: 0, e: 'Slide 25: O₂ at 1 atm gives C = 0.001 mol/L. For H₂, 8 × 10⁻⁴ × P = 0.001, so P = 1.25 atm.' },
+      { q: 'SO₂ dissolves at 1.3 × 10⁻³ mol/L when its pressure is 1 atm. What is Henry’s constant k?', o: ['1.3 × 10⁻³ mol/L·atm', '2.6 × 10⁻³ mol/L·atm', '7.7 × 10² mol/L·atm', '1.0 mol/L·atm'], a: 0, e: 'Slide 24: C = kP, so k = C ÷ P = 1.3 × 10⁻³ ÷ 1 atm.' },
+      { q: 'Using the lecture’s CO₂ data (k = 3.4 × 10⁻² mol/L·atm), what is the solubility when the pressure drops from 4.0 atm to 2.0 atm?', o: ['0.068 mol/L', '0.136 mol/L', '0.272 mol/L', '0.017 mol/L'], a: 0, e: 'C = kP = (3.4 × 10⁻²)(2.0) = 0.068 mol/L, half of the value at 4.0 atm.' }
+    ]
+  };
+
+  const state = { teamCount: 2, board: 'full', teams: [], turn: 0, phase: 'roll', decks: {} };
+  const layout = () => BOARDS[state.board];
+  const cur = () => state.teams[state.turn];
+
+  const segTeams = $('#segTeams'), segBoard = $('#segBoard');
+  const boardEl = $('#board'), scoresEl = $('#scores'), turnEl = $('#turnText');
+  const dieEl = $('#die'), rollBtn = $('#rollBtn');
+  const sheet = $('#sheet'), panel = $('#panel'), toast = $('#toast');
+
+  function makeDot(team, cls) {
+    const d = el('span', cls || 'dot');
+    d.style.background = team.color;
+    return d;
+  }
+
+  function renderControls() {
+    segTeams.innerHTML = '';
+    [2, 3, 4, 5].forEach((n) => {
+      const b = el('button', '', String(n));
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(state.teamCount === n));
+      b.addEventListener('click', () => { state.teamCount = n; renderControls(); newGame(); });
+      segTeams.appendChild(b);
+    });
+    segBoard.innerHTML = '';
+    [['short', 'Short'], ['full', 'Full']].forEach((pair) => {
+      const b = el('button', '', pair[1]);
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(state.board === pair[0]));
+      b.addEventListener('click', () => { state.board = pair[0]; renderControls(); newGame(); });
+      segBoard.appendChild(b);
+    });
+  }
+
+  function buildBoard() {
+    boardEl.innerHTML = '';
+    layout().forEach((type, i) => {
+      const jump = JUMPS[state.board][i];
+      const kind = jump === undefined ? type : (jump > i ? 'ladder' : 'snake');
+      const c = el('div', 'cell t-' + kind);
+      c.id = 'cell-' + i;
+      const r = Math.floor(i / 6), col = i % 6;
+      c.style.gridRow = String(r + 1);
+      c.style.gridColumn = String((r % 2 ? 5 - col : col) + 1);
+      c.appendChild(el('span', 'num', String(i)));
+      if (jump !== undefined) {
+        const w = el('span', 'jump');
+        w.innerHTML = ICONS[kind];
+        w.appendChild(el('span', 'jl', (jump > i ? '↑ ' : '↓ ') + jump));
+        c.appendChild(w);
+        c.title = (jump > i ? 'Ladder to ' : 'Snake to ') + jump;
+      } else if (type === 'start' || type === 'finish') {
+        c.appendChild(el('span', 'lab', type));
+      }
+      c.appendChild(el('div', 'tokens'));
+      boardEl.appendChild(c);
+    });
+  }
+
+  function renderTokens() {
+    boardEl.querySelectorAll('.tokens').forEach((t) => { t.innerHTML = ''; });
+    state.teams.forEach((team, i) => {
+      const holder = $('#cell-' + team.pos + ' .tokens');
+      if (!holder) return;
+      const tk = makeDot(team, 'tk' + (i === state.turn && state.phase !== 'over' ? ' active' : ''));
+      tk.title = team.name;
+      holder.appendChild(tk);
+    });
+  }
+
+  function renderScores() {
+    scoresEl.innerHTML = '';
+    state.teams.forEach((t, i) => {
+      const p = el('div', 'pill' + (i === state.turn && state.phase !== 'over' ? ' active' : ''));
+      p.appendChild(makeDot(t));
+      p.appendChild(el('span', '', t.name));
+      p.appendChild(el('b', '', String(t.score)));
+      p.appendChild(el('span', 'pts', 'pts'));
+      scoresEl.appendChild(p);
+    });
+  }
+
+  function renderTurn() {
+    const t = cur();
+    const msg = {
+      roll: t.name + ' team, roll the dice.',
+      moving: t.name + ' team is moving…',
+      question: t.name + ' team, answer the card.',
+      over: 'Game over. Press New game to play again.'
+    };
+    turnEl.textContent = msg[state.phase];
+    rollBtn.disabled = state.phase !== 'roll';
+  }
+
+  function updateUI() { renderScores(); renderTokens(); renderTurn(); }
+
+  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  function showDie(n) {
+    dieEl.innerHTML = '';
+    for (let i = 0; i < 9; i++) dieEl.appendChild(el('span', 'pip' + (PIPS[n].indexOf(i) >= 0 ? ' on' : '')));
+    dieEl.setAttribute('aria-label', 'Dice shows ' + n);
+  }
+
+  function draw(type) {
+    let d = state.decks[type];
+    if (!d || !d.length) {
+      d = shuffle(BANK[type].map((_, i) => i));
+      state.decks[type] = d;
+    }
+    return BANK[type][d.pop()];
+  }
+
+  function closeSheet() { sheet.hidden = true; panel.innerHTML = ''; }
+
+  let toastTimer = 0;
+  function hideToast() { clearTimeout(toastTimer); toast.hidden = true; }
+  function showToast(kind, text) {
+    clearTimeout(toastTimer);
+    toast.className = 'toast t-' + kind;
+    toast.textContent = text;
+    toast.hidden = false;
+    toastTimer = setTimeout(hideToast, 4500);
+  }
+
+  function newGame() {
+    closeSheet();
+    hideToast();
+    state.teams = TEAMS.slice(0, state.teamCount).map((t) => ({ name: t.name, color: t.color, pos: 0, score: 0 }));
+    state.turn = 0;
+    state.phase = 'roll';
+    state.decks = {};
+    buildBoard();
+    showDie(6);
+    updateUI();
+  }
+
+  async function roll() {
+    if (state.phase !== 'roll') return;
+    state.phase = 'moving';
+    hideToast();
+    renderTurn();
+    const value = 1 + Math.floor(Math.random() * 6);
+    if (!reduce) {
+      for (let i = 0; i < 8; i++) { showDie(1 + Math.floor(Math.random() * 6)); await sleep(70); }
+    }
+    showDie(value);
+    const team = cur();
+    const last = layout().length - 1;
+    const target = Math.min(last, team.pos + value);
+    await sleep(200);
+    while (team.pos < target) {
+      team.pos++;
+      renderTokens();
+      await sleep(170);
+    }
+    const type = layout()[team.pos];
+    if (type === 'finish') { await sleep(300); finishGame(team); return; }
+    const jump = JUMPS[state.board][team.pos];
+    if (jump !== undefined) { await applyJump(team, jump); return; }
+    openCard(type);
+  }
+
+  async function applyJump(team, to) {
+    const up = to > team.pos;
+    showToast(up ? 'ladder' : 'snake', team.name + (up ? ' team found a ladder! Climb from ' : ' team hit a snake! Slide from ') + team.pos + ' to ' + to + '.');
+    await sleep(900);
+    team.pos = to;
+    renderTokens();
+    await sleep(700);
+    state.turn = (state.turn + 1) % state.teams.length;
+    state.phase = 'roll';
+    updateUI();
+  }
+
+  function openCard(type) {
+    state.phase = 'question';
+    renderTurn();
+    const team = cur();
+    const q = draw(type);
+    const opts = q.o.map((text, i) => ({ text: text, ok: i === q.a }));
+    if (!q.fixed) shuffle(opts);
+    const pts = type === 'challenge' ? 2 : 1;
+    let chosen = -1, locked = false;
+
+    panel.innerHTML = '';
+    const top = el('div', 'sheet-top');
+    top.appendChild(el('span', 'chip t-' + type, type === 'challenge' ? 'Challenge · 2 points' : TYPE_NAMES[type]));
+    const who = el('span', 'who');
+    who.appendChild(makeDot(team));
+    who.appendChild(document.createTextNode(team.name + ' team · space ' + team.pos));
+    top.appendChild(who);
+
+    const h = el('h2', 'qtext', q.q);
+    h.tabIndex = -1;
+
+    const submit = el('button', 'primary small', 'Submit answer');
+    submit.type = 'button';
+    submit.disabled = true;
+
+    const list = el('div', 'opts');
+    list.setAttribute('role', 'group');
+    list.setAttribute('aria-label', 'Answer choices');
+    const btns = opts.map((o, i) => {
+      const b = el('button', 'opt');
+      b.type = 'button';
+      b.setAttribute('aria-pressed', 'false');
+      b.appendChild(el('span', 'letter', String.fromCharCode(65 + i)));
+      b.appendChild(el('span', 'otext', o.text));
+      b.addEventListener('click', () => {
+        if (locked) return;
+        chosen = i;
+        btns.forEach((x, j) => { x.classList.toggle('sel', j === i); x.setAttribute('aria-pressed', String(j === i)); });
+        submit.disabled = false;
+      });
+      list.appendChild(b);
+      return b;
+    });
+
+    const fb = el('div', 'fb');
+    fb.hidden = true;
+    const actions = el('div', 'actions');
+    actions.appendChild(submit);
+
+    submit.addEventListener('click', () => {
+      if (chosen < 0 || locked) return;
+      locked = true;
+      const correct = opts[chosen].ok;
+      btns.forEach((b, i) => {
+        b.disabled = true;
+        b.classList.remove('sel');
+        const letter = b.querySelector('.letter');
+        if (opts[i].ok) { b.classList.add('ok'); letter.textContent = '✓'; }
+        else if (i === chosen) { b.classList.add('no'); letter.textContent = '✗'; }
+      });
+      if (correct) team.score += pts;
+      renderScores();
+      fb.hidden = false;
+      fb.className = 'fb ' + (correct ? 'good' : 'bad');
+      fb.innerHTML = '';
+      fb.appendChild(el('strong', '', correct
+        ? 'Correct! +' + pts + (pts > 1 ? ' points' : ' point') + '. Stay on space ' + team.pos + '.'
+        : 'Not quite. Go back one space to space ' + Math.max(0, team.pos - 1) + '.'));
+      fb.appendChild(el('p', '', q.e));
+      actions.innerHTML = '';
+      const cont = el('button', 'primary small', 'Continue');
+      cont.type = 'button';
+      cont.addEventListener('click', () => afterCard(correct));
+      actions.appendChild(cont);
+      cont.focus();
+    });
+
+    panel.append(top, h, list, fb, actions);
+    sheet.hidden = false;
+    panel.scrollTop = 0;
+    h.focus({ preventScroll: true });
+  }
+
+  async function afterCard(correct) {
+    state.phase = 'moving';
+    closeSheet();
+    renderTurn();
+    const team = cur();
+    if (!correct && team.pos > 0) {
+      await sleep(250);
+      team.pos--;
+      renderTokens();
+      await sleep(350);
+    }
+    state.turn = (state.turn + 1) % state.teams.length;
+    state.phase = 'roll';
+    updateUI();
+  }
+
+  function joinNames(list) {
+    const n = list.map((t) => t.name + ' team');
+    return n.length < 2 ? n.join('') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1];
+  }
+
+  function finishGame(finisher) {
+    state.phase = 'over';
+    updateUI();
+    const max = Math.max.apply(null, state.teams.map((t) => t.score));
+    const leaders = state.teams.filter((t) => t.score === max);
+    let msg, winners;
+    if (leaders.length === 1) { winners = leaders; msg = leaders[0].name + ' team wins with ' + max + (max === 1 ? ' point!' : ' points!'); }
+    else if (leaders.indexOf(finisher) >= 0) { winners = [finisher]; msg = finisher.name + ' team wins the tie-break by reaching FINISH first!'; }
+    else { winners = leaders; msg = "It's a tie between " + joinNames(leaders) + '.'; }
+
+    panel.innerHTML = '';
+    const top = el('div', 'sheet-top');
+    top.appendChild(el('span', 'chip t-finish', 'Game over'));
+    top.appendChild(el('span', 'who', finisher.name + ' team reached FINISH'));
+    const h = el('h2', 'qtext', msg);
+    h.tabIndex = -1;
+    const list = el('ol', 'rank');
+    state.teams.slice().sort((a, b) => b.score - a.score).forEach((t) => {
+      const li = el('li', winners.indexOf(t) >= 0 ? 'win' : '');
+      li.appendChild(makeDot(t));
+      li.appendChild(el('span', '', t.name));
+      li.appendChild(el('span', 'sc', t.score + (t.score === 1 ? ' pt' : ' pts')));
+      list.appendChild(li);
+    });
+    const actions = el('div', 'actions');
+    const again = el('button', 'primary small', 'Play again');
+    again.type = 'button';
+    again.addEventListener('click', newGame);
+    const close = el('button', 'secondary', 'View board');
+    close.type = 'button';
+    close.addEventListener('click', closeSheet);
+    actions.append(again, close);
+    panel.append(top, h, list, actions);
+    sheet.hidden = false;
+    h.focus({ preventScroll: true });
+  }
+
+  rollBtn.addEventListener('click', roll);
+  $('#newGame').addEventListener('click', newGame);
+  renderControls();
+  newGame();
+})();
+</script>
+
+
+</body></html>
